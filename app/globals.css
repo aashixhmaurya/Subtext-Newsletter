@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #f7f7f8;
+  --color-sheet: #ffffff;
+  --color-mist: #f0f0f2;
+  --color-line: #e2e2e6;
+  --color-ink: #111111;
+  --color-soft: #5c5c63;
+  --color-faint: #8a8a91;
+  --color-link: #0b57d0;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+}
+
+html,
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: #d6e4f7;
+}
+
+textarea,
+input,
+button {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+textarea:focus-visible,
+input:focus-visible {
+  outline: 2px solid #111111;
+  outline-offset: 2px;
+}
+
+.prose-draft {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+mark.issue {
+  background: transparent;
+  color: inherit;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+mark.issue[data-kind="long"] { background: rgba(230, 200, 115, 0.2); }
+mark.issue[data-kind="passive"] { background: rgba(126, 166, 224, 0.14); }
+mark.issue[data-kind="filler"] { background: rgba(169, 150, 224, 0.16); }
+mark.issue[data-kind="dense"] { box-shadow: inset 2px 0 0 #e6c873; }
+mark.issue[data-kind="jargon"] { background: rgba(95, 174, 116, 0.14); }
+mark.issue[data-kind="clarity"] { background: rgba(227, 137, 123, 0.13); }
+mark.issue[data-kind="repetition"] { background: rgba(154, 165, 177, 0.16); }
+mark.issue[data-kind="accuracy"] { background: transparent; text-decoration: underline wavy #d2453a; text-underline-offset: 4px; }
+mark.issue[data-active="true"] { outline: 1.5px solid var(--color-ink); outline-offset: 1px; }
+
+ins.diff { background: #e3f4e6; text-decoration: none; border-radius: 2px; }
+del.diff { background: #fbe4e2; color: #9b3b33; border-radius: 2px; }
+
+.fade-in { animation: fade 0.22s ease-out; }
+@keyframes fade {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}

@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Save to Subtext",
+  "version": "0.1.0",
+  "description": "Clip the page you're reading into your Subtext sources.",
+  "action": { "default_popup": "popup.html", "default_title": "Save to Subtext" },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "commands": {
+    "_execute_action": { "suggested_key": { "default": "Alt+Shift+S" } }
+  }
+}
