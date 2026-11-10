@@ -1,4 +1,4 @@
-# Subtext
+# Subtext Newsletter
 
 An editorial desk for AI newsletters. Clip what you are reading, get a research brief that separates proven facts from speculation, then edit the draft with notes you can accept or dismiss.
 
