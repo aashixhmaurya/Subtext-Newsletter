@@ -1,96 +1,117 @@
 # Subtext Newsletter
 
-An editorial desk for AI newsletters. Clip what you are reading, get a research brief that separates proven facts from speculation, then edit the draft with notes you can accept or dismiss.
-
-Built for the This Week in AI Forward Deployed Engineer Intern assignment.
+A writing desk for people who write AI newsletters. You collect what you read, Subtext turns it into a research brief with checked facts, and then helps you edit your draft.
 
 **Live:** [subtext-newsletter.vercel.app](https://subtext-newsletter.vercel.app)
 
 ---
 
-## Quick start
+## What it is
 
-```bash
-npm install
-cp .env.example .env.local
-# add GEMINI_API_KEY (and optional Supabase keys)
-npm run dev
-```
+Writing a good newsletter is not about summarising. Summaries are easy now. The hard part is finding the real story in ten different links and making sure every claim you write is actually backed by a source.
 
-Open [http://localhost:3000](http://localhost:3000). The built-in example works without any keys.
+Subtext is built for one editor at a small AI newsletter who reads a lot and publishes one or two pieces a week for founders, builders, and operators.
 
-### Environment
+It does three things:
 
-| Variable | Required | Notes |
-|---|---|---|
-| `GEMINI_API_KEY` | For live brief / editor pass | Google AI Studio |
-| `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` |
-| `SUPABASE_URL` | No | Enables cloud sync |
-| `SUPABASE_SERVICE_ROLE_KEY` | No | Server only. Never use `NEXT_PUBLIC_` |
+1. **Collect** — paste links, posts on X, or plain text, or save pages while you browse.
+2. **Research** — get a brief that shows what happened, why it matters, and which facts the sources really support.
+3. **Write** — draft next to the brief and get clear editing notes that you can accept or ignore. Your original is never lost.
 
-Keep secrets in `.env.local`. Do not commit them.
-
-### Optional Supabase sync
-
-Without Supabase, everything stays in the browser. To sync spaces and clips:
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor
-3. Put the project URL and `service_role` key in `.env.local`
-4. Restart the app — the header badge should say **Synced**
-
-The browser never talks to Supabase. Server routes use the service role, and RLS stays on with no public policies. Each browser gets an anonymous workspace ID (see **Clipper → Workspace**).
-
-### Deploy
-
-Host as a normal Next.js app (Vercel works). Set the same env vars on the host.
+The site opens on an empty space. A finished example called **Testing and Example** is one click away, so you can see every feature without adding anything.
 
 ---
 
-## Walkthrough
+## Features
 
-1. The site opens on a blank space. Use the space menu at the top left, or **Open example**, to load **Testing and Example** — four real sources, a finished brief, a rough draft, and editor notes. Your own spaces sit at the top of that menu, newest first, and the example stays at the bottom. **Light / Dark** in the header switches the theme.
-2. **Research** — what happened, why it matters (founders / builders / operators), verified facts with quotes, speculation tagged separately, story angles.
-3. **Write** — rule checks run live; editor notes are loaded. Accept or dismiss each card. **Compare → Load the published version** for before/after.
-4. **Product note** — product, engineering, and editorial judgment.
-5. **Clipper** — bookmarklet and Chrome extension.
-6. Back in your own space: paste 3+ URLs, build a brief, draft, run the editor pass.
+### Collect sources
+
+Paste links to articles, posts on X, or announcements, one per line. Each page is read on the server and cleaned into plain text. If a page can't be read (login wall, bot check, PDF, timeout), it says why and lets you paste the text yourself.
+
+![Sources](docs/screenshots/sources.png)
+
+### Research brief
+
+One click builds a brief from all your sources: what happened, a one-line takeaway from each source, and why it matters for founders, builders, and operators.
+
+![Research brief](docs/screenshots/brief.png)
+
+### Facts you can trust
+
+Every fact in the brief comes with a short quote from a source. The server checks that the quote really appears in that source. If it doesn't, the fact is marked as unsupported instead of being shown as true. Vendor claims, analysis, and guesses are kept in a separate list so they don't get mixed up with facts.
+
+![Checked facts](docs/screenshots/evidence.png)
+
+### Story angles
+
+The brief suggests a few angles for the piece, each with a headline and a takeaway for the reader. Pick one and Subtext starts a rough draft from it.
+
+![Story angles](docs/screenshots/angles.png)
+
+### Editor pass
+
+Two kinds of notes appear next to your draft:
+
+- **Rule checks** run as you type: long sentences, passive voice, filler words, dense paragraphs.
+- **Editor notes** come from AI: unclear openings, unexplained jargon, repetition, and claims that don't match the sources.
+
+Each note explains the problem and can suggest a rewrite. Nothing changes until you click **Accept**. Live numbers at the top show word count, reading time, average sentence length, grade level, and long sentences.
+
+![Editor pass](docs/screenshots/editor.png)
+
+### Before and after
+
+**Compare** shows every word that changed between your original and the current draft, along with how the numbers moved. Undo and restore are always there.
+
+![Compare](docs/screenshots/compare.png)
+
+### Spaces
+
+Each piece you work on lives in its own space. New spaces show at the top, the example stays at the bottom. Spaces are saved in the browser and synced to Supabase when it is set up.
+
+### Save from anywhere
+
+A bookmarklet and a small Chrome extension let you save a page while you read it. The saved page lands in whichever space is open. Because it uses the text your browser already sees, it also works for paywalled and logged-in pages.
+
+### Light and dark mode
+
+Switch with **Light / Dark** in the header. The first visit follows your system setting, and your choice is remembered.
+
+### Safe links
+
+Subtext only reads public web pages. Every link is checked before it is opened:
+
+- Local and private network addresses are refused.
+- Redirects are checked again at every step.
+- Adult, gambling, and piracy sites are refused, using a list of known domains and the content labels those sites put on their own pages.
+- The same check applies to the link box, the bookmarklet, the extension, and the save API.
+- Each page has a time limit and a size limit.
 
 ---
 
-## Product decisions
+## How it was built
 
-**Who it is for:** one editor at a small AI newsletter who reads a lot and ships one or two pieces a week for founders and operators.
+| Part | What I used |
+|---|---|
+| App | Next.js 16 (App Router), React 19, TypeScript |
+| Styling | Tailwind CSS 4 |
+| AI | Google Gemini 2.5 Flash, with JSON output |
+| Reading pages | Server-side fetch and cheerio |
+| Storage | Browser storage, plus optional Supabase sync |
+| Hosting | Vercel |
 
-**Problem:** not summarising. Summaries are cheap. The hard part is finding the story and knowing which claims the sources actually support.
+How the pieces fit:
 
-**Flow:** clip or paste links → research brief → pick an angle → draft beside the brief → editor pass → accept / dismiss → compare with the original.
-
-**Priorities:** citation checks against source text, writer stays in control, graceful failure on blocked pages, safe link handling, Pocket-style clipper.
-
-**Left out:** accounts, collaboration, publishing, PDFs, scheduled feeds.
-
-More detail lives in-app under **Product note**.
-
----
-
-## Assignment mapping
-
-### Part A — Research
-Paste URLs, tweets, or notes, or use the bookmarklet / Chrome extension. Brief covers what happened, per-source takeaways, why it matters, audiences, facts with source links and quotes, speculation tags, angles, and open questions. The server checks each fact quote against the extracted source text and demotes unmatched claims. Unreadable, login-walled, and restricted links are reported with a clear reason (see [Source safety](#source-safety)).
-
-### Part B — Writing
-Rule checks for long sentences, passive voice, filler, and dense paragraphs. LLM pass for clarity, jargon, repetition, and accuracy vs sources. Each note shows the passage, why it matters, and an optional rewrite. Accept / dismiss, original kept, Compare with a word diff. Metrics include words, reading time, average sentence length, grade level, and long-sentence count, with short explanations.
-
-### Part C — Sample
-Rough draft → eight editor notes → published version (~469 words). Average sentence length moves from 18.8 → 15.5 and grade from 8.7 → 7.2.
-
-### Part D — Decisions
-Covered in **Product note** and this README.
+- **Three server routes** do the main work: `extract` reads a page, `brief` builds the research brief, and `review` runs the editor pass.
+- **AI is used only where judgment is needed:** the brief and the editor notes.
+- **Everything else is plain code:** cleaning pages, matching quotes to sources, the writing rules, the numbers, and the word-by-word compare. These are fast and give the same result every time.
+- **The browser never talks to the database.** Two small routes save spaces and clips to Supabase using a server-only key.
 
 ---
 
-## Sample editorial (Part C)
+## Sample piece
+
+The example space holds a full before-and-after edit of a short piece on AI model prices, built from four real sources.
 
 **Headline:** The cheap end of AI is collapsing. The top end isn't.
 
@@ -108,80 +129,85 @@ Bertrande counted 24 price cuts and 24 increases in early November. Anthropic's 
 3. [AI API prices November 2026 (Bertrande)](https://bertrande.com/en/reports/2026-11/)
 4. [Open model API prices (GPUwerk)](https://gpuwerk.com/blog/open-model-api-prices/)
 
-### Before → after
-
-| | Original | Published |
+| | Rough draft | Final |
 |---|---|---|
 | Words | 461 | 469 |
-| Avg sentence | 18.8 | 15.5 |
+| Average sentence | 18.8 words | 15.5 words |
 | Grade level | 8.7 | 7.2 |
 | Long sentences | 3 | 1 |
 
-Open **Write → Compare → Load the published version** in the app for the full diff.
+To see the full edit in the app: open **Testing and Example**, go to **Write → Compare**, and click **Load the published version**.
 
 ---
 
-## Layout
+## Run it locally
 
-```
-app/page.tsx              Research | Split | Write
-app/capture/page.tsx      clipper landing page
-app/api/extract           URL / tweet / pasted text
-app/api/brief             research brief + citation checks
-app/api/review            editorial pass
-app/api/desks, clips      optional Supabase storage
-components/               panels and shared UI
-lib/writing.ts            metrics, rules, word diff
-lib/sample.ts             example space
-lib/store.ts, sync.ts     Supabase + browser sync
-lib/safety.ts             blocked site categories
-supabase/schema.sql       desks and clips tables
-extension/                Chrome MV3 clipper
+You need Node.js 20 or newer.
+
+```bash
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-AI is used for the brief and the editor pass. Extraction cleanup, citation matching, writing rules, metrics, and the diff are deterministic.
+Open [localhost:3000](http://localhost:3000). The example works without any keys. To build your own briefs and run the editor pass, add a Gemini key.
+
+| Variable | Needed? | What it does |
+|---|---|---|
+| `GEMINI_API_KEY` | For briefs and the editor pass | Key from Google AI Studio |
+| `GEMINI_MODEL` | No | Defaults to `gemini-2.5-flash` |
+| `SUPABASE_URL` | No | Turns on cloud sync |
+| `SUPABASE_SERVICE_ROLE_KEY` | No | Server only. Never prefix it with `NEXT_PUBLIC_` |
+
+Keys live only in `.env.local`, which is not committed.
+
+**Optional Supabase sync**
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor.
+3. Add the project URL and service role key to `.env.local`.
+4. Restart the app. The header should show **Synced**.
+
+Each browser gets its own workspace ID, shown under **Clipper → Workspace**. Paste it on another device to open the same spaces.
+
+**Deploy:** it runs as a normal Next.js app. On Vercel, import the repo and add the same environment variables.
 
 ---
 
-## Clipper
+## Project structure
 
-1. Open **Clipper** in the header
-2. Drag the bookmarklet to the bookmarks bar, or
-3. Chrome → `chrome://extensions` → Developer mode → Load unpacked → select `extension/` → set the Subtext URL
-
-Clips go to Supabase when configured, otherwise into a local inbox for the open space.
-
----
-
-## Source safety
-
-Subtext reads pages on the server, so every link is checked before anything is fetched.
-
-- **Public web pages only.** Links must be `http` or `https`. Local, private, and cloud-metadata addresses are refused, including disguised forms such as numeric IPs and hostnames that resolve to private ranges.
-- **Redirects are re-checked.** Every hop is validated again, with a limit of six redirects, so a public link can't bounce the server somewhere it shouldn't go.
-- **Restricted categories are refused.** Adult, gambling, and piracy sites are blocked using a maintained domain list, hostname patterns, and the content-rating labels such sites publish in their own page headers. Blocked links are never fetched or stored.
-- **Same rules everywhere.** The link box, the bookmarklet, the Chrome extension, and the clip storage API all apply the same check, and the user sees a short, neutral message explaining why a link was skipped.
-- **Bounded reads.** Each page gets a fixed time budget with one retry, and only the first 24,000 characters of text are kept. PDFs, media files, and login-walled pages are reported clearly instead of half-read.
+```
+app/page.tsx          main screen: Research, Split, Write
+app/capture/          page the clipper opens to save a clip
+app/api/extract       reads and cleans a page
+app/api/brief         builds the brief and checks quotes
+app/api/review        editor pass
+app/api/desks, clips  optional Supabase storage
+components/           panels and shared UI
+lib/writing.ts        writing rules, numbers, word compare
+lib/safety.ts         blocked site categories
+lib/sample.ts         the example space
+supabase/schema.sql   database tables
+extension/            Chrome extension
+```
 
 ---
 
-## Tools used
+## Assignment parts
 
-- Cursor / AI coding assistant for scaffolding and iteration
-- Gemini (`gemini-2.5-flash`) for brief and editor pass
-- Next.js, React, Tailwind, cheerio
-- Supabase for optional space and clip storage
-
-I designed the workflow, citation grounding, hybrid rules + LLM editor, and the sample editorial, and checked extract → brief → review → accept/dismiss → compare end to end.
+| Part | Where to find it |
+|---|---|
+| A — Research assistant | Research view: sources, brief, checked facts, angles |
+| B — Writing assistant | Write view: rule checks, editor notes, numbers, compare |
+| C — Sample piece | The example space and the section above |
+| D — Product and engineering note | **Product note** in the app header, and this README |
 
 ---
 
 ## Limits
 
-- No accounts. A workspace ID works like a private link — anyone with it can open that workspace.
-- Sync is last-write-wins per space.
-- Some sites block automated fetch; paste text or use the clipper.
-- Category blocking covers well-known sites and clearly labelled pages, not every site on the web.
-- There is no per-user rate limit on brief and review requests yet.
-- Gemini can rate-limit or overload; the UI retries and shows a clear message.
-- Not production-hardened, by design for the assignment.
+- There are no accounts. A workspace ID works like a private link, so anyone who has it can open those spaces.
+- If the same space is edited on two devices, the latest save wins.
+- Some sites block automated reading. Use the clipper or paste the text instead.
+- Site blocking covers well-known sites and clearly labelled pages, not every site on the web.
+- Gemini can be busy or rate-limited at times. The app retries and shows a clear message.
