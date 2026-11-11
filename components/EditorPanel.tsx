@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Desk, IssueKind, Source, Suggestion } from "@/lib/types";
 import { applySuggestion, diffWords, highlights, metrics, ruleCheck, type Metrics } from "@/lib/writing";
 import { published } from "@/lib/sample";
+import { readJSON } from "./ResearchPanel";
 import { Button, Segmented, Spinner } from "./ui";
 
 type Update = (fn: (d: Desk) => Desk) => void;
@@ -119,8 +120,8 @@ export default function EditorPanel({ desk, update, sources, narrow }: { desk: D
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ draft, sources: sources.map((s, i) => ({ n: i + 1, title: s.title, text: s.text })) }),
       });
-      const data = await res.json().catch(() => ({ error: "The server sent back something unreadable." }));
-      if (!res.ok) throw new Error(data.error);
+      const data = await readJSON(res);
+      if (!res.ok || data.error) throw new Error(data.error);
       update((d) => ({ ...d, editorNotes: data.notes, original: d.original || d.draft }));
       if (!data.notes.length) setError("The editor pass found nothing worth changing.");
     } catch (e) {

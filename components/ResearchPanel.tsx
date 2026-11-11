@@ -9,12 +9,24 @@ type Update = (fn: (d: Desk) => Desk) => void;
 export async function extractSource(input: { url?: string; text?: string; title?: string }): Promise<Partial<Source>> {
   try {
     const res = await fetch("/api/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(input) });
+    if (res.status === 504) return { status: "failed", error: "The site took too long to respond. Try again in a moment, or paste the text." };
     if (!res.ok) throw new Error();
     return await res.json();
   } catch {
     return { status: "failed", error: "Couldn't reach Subtext's reader. Check your connection and retry." };
   }
 }
+
+export async function readJSON(res: Response) {
+  try {
+    return await res.json();
+  } catch {
+    if (res.status === 504) return { error: "This took too long. Try again, or use fewer sources." };
+    return { error: `Something went wrong on the server (${res.status}). Try again.` };
+  }
+}
+
+const linkKey = (u: string) => u.toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/[/#]+$/, "");
 
 export const newSource = (patch: Partial<Source>): Source => ({
   id: Math.random().toString(36).slice(2, 10),
@@ -48,10 +60,23 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
   };
 
   const addLinks = () => {
-    const urls = [...new Set(links.split(/[\s,]+/).map((l) => l.trim()).filter((l) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+/.test(l)))];
-    if (!urls.length) return;
-    const existing = new Set(desk.sources.map((s) => s.url));
-    const fresh = urls.filter((u) => !existing.has(u)).map((url) => newSource({ url, title: url.replace(/^https?:\/\/(www\.)?/, "") }));
+    const candidates = links
+      .split(/\s+/)
+      .map((l) => l.trim().replace(/^[<("']+|[>)"',.;]+$/g, ""))
+      .filter((l) => /^(https?:\/\/)?[\w-]+(\.[\w-]+)+/i.test(l))
+      .map((l) => (/^https?:\/\//i.test(l) ? l : `https://${l}`));
+    const seen = new Set(desk.sources.filter((s) => s.url).map((s) => linkKey(s.url)));
+    const fresh: Source[] = [];
+    for (const url of candidates) {
+      if (seen.has(linkKey(url))) continue;
+      seen.add(linkKey(url));
+      fresh.push(newSource({ url, title: url.replace(/^https?:\/\/(www\.)?/i, "") }));
+    }
+    if (!candidates.length) {
+      setError("Those don't look like links. Paste full web addresses, one per line, or use Paste text instead.");
+      return;
+    }
+    setError(fresh.length ? "" : "Those links are already in this issue.");
     update((d) => ({ ...d, sources: [...d.sources, ...fresh] }));
     fresh.forEach((s) => read(s, { url: s.url }));
     setLinks("");
@@ -79,8 +104,8 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sources: usable.map(({ title, site, url, text }) => ({ title, site, url, text })) }),
       });
-      const data = await res.json().catch(() => ({ error: "The server sent back something unreadable." }));
-      if (!res.ok) throw new Error(data.error);
+      const data = await readJSON(res);
+      if (!res.ok || data.error) throw new Error(data.error);
       update((d) => ({ ...d, brief: data, briefSources: usable.map((s) => s.id) }));
     } catch (e) {
       setError(e instanceof Error && e.message ? e.message : "The brief couldn't be generated.");
@@ -203,7 +228,7 @@ function SourceRow({ source: s, n, fallbackN, onRemove, onRetry, onPaste }: { so
             </div>
           )}
         </div>
-        <button onClick={onRemove} className="text-[13px] text-faint opacity-0 transition-opacity hover:text-ink group-hover:opacity-100" aria-label="Remove source">
+        <button onClick={onRemove} className="text-[13px] text-faint transition-opacity hover:text-ink focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100" aria-label="Remove source">
           Remove
         </button>
       </div>
