@@ -103,7 +103,13 @@ async function assertPublic(url: URL) {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Unreadable("Only web pages can be read.");
   if (isPrivateName(url.hostname)) throw new Unreadable("Local and private addresses can't be fetched.");
   const name = url.hostname.replace(/^\[|\]$/g, "");
-  const addresses = isIP(name) ? [name] : (await lookup(name, { all: true })).map((a) => a.address);
+  const addresses = isIP(name)
+    ? [name]
+    : (
+        await lookup(name, { all: true }).catch(() => {
+          throw new Unreadable("That site couldn't be found. Check the address.");
+        })
+      ).map((a) => a.address);
   if (addresses.some(isPrivateAddress)) throw new Unreadable("Local and private addresses can't be fetched.");
 }
 
