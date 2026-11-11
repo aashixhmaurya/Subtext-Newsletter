@@ -18,7 +18,7 @@ type View = "research" | "split" | "write";
 
 const blankDesk = (n: number): Desk => ({
   id: Math.random().toString(36).slice(2, 10),
-  name: `Untitled issue ${n}`,
+  name: `Untitled story ${n}`,
   sources: [],
   original: "",
   draft: "",
@@ -26,6 +26,13 @@ const blankDesk = (n: number): Desk => ({
   dismissed: [],
   updatedAt: Date.now(),
 });
+
+const tidy = (list: Desk[]) =>
+  list.map((d) => ({ ...d, name: d.name === "Issue 47 · Inference prices" ? sampleDesk.name : d.name.replace(/^Untitled issue (\d+)$/, "Untitled story $1") }));
+
+const ordered = (list: Desk[]) => [...list].sort((a, b) => Number(a.id === "sample") - Number(b.id === "sample") || (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+
+const withOwn = (list: Desk[]) => (list.some((d) => d.id !== "sample") ? list : [blankDesk(1), ...list]);
 
 export default function Home() {
   const [desks, setDesks] = useState<Desk[]>([]);
@@ -48,10 +55,10 @@ export default function Home() {
     try {
       saved = JSON.parse(localStorage.getItem(DESKS) || "[]");
     } catch {}
-    const list = saved.length ? saved : [sampleDesk];
+    const list = withOwn(tidy(saved.length ? saved : [sampleDesk]));
     const id = localStorage.getItem(ACTIVE);
     setDesks(list);
-    setActiveId(list.some((d) => d.id === id) ? id! : list[0].id);
+    setActiveId(list.some((d) => d.id === id && d.id !== "sample") ? id! : ordered(list)[0].id);
     setWelcome(!localStorage.getItem("subtext.welcomed"));
     setReady(true);
 
@@ -62,8 +69,8 @@ export default function Home() {
         cloud.current = true;
         remote.forEach((d) => synced.current.set(d.id, d.updatedAt));
         setDesks((local) => {
-          const merged = mergeDesks(local, remote);
-          setActiveId((cur) => (merged.some((d) => d.id === cur) ? cur : merged[0].id));
+          const merged = tidy(mergeDesks(local, remote));
+          setActiveId((cur) => (merged.some((d) => d.id === cur) ? cur : ordered(merged)[0].id));
           return merged;
         });
         setSync("saved");
@@ -181,8 +188,7 @@ export default function Home() {
 
   const removeDesk = () => {
     if (!confirm(`Delete "${desk.name}"? This can't be undone.`)) return;
-    const rest = desks.filter((d) => d.id !== desk.id);
-    const next = rest.length ? rest : [sampleDesk];
+    const next = withOwn(desks.filter((d) => d.id !== desk.id));
     if (cloud.current) {
       dropDesk(workspace.current, desk.id).catch((e: Error) => {
         setSync("error");
@@ -191,18 +197,24 @@ export default function Home() {
       synced.current.delete(desk.id);
     }
     setDesks(next);
-    setActiveId(next[0].id);
+    setActiveId(ordered(next)[0].id);
     setMenu(false);
   };
 
-  const restoreSample = () => {
-    setDesks((all) => [sampleDesk, ...all.filter((d) => d.id !== "sample")]);
+  const openSample = () => {
+    setDesks((all) => (all.some((d) => d.id === "sample") ? all : [...all, sampleDesk]));
     setActiveId("sample");
+    setView("research");
+    setMenu(false);
+  };
+
+  const pick = (id: string) => {
+    setActiveId(id);
     setMenu(false);
   };
 
   const rename = () => {
-    const name = prompt("Name this issue", desk.name);
+    const name = prompt("Name this story", desk.name);
     if (name?.trim()) set((d) => ({ ...d, name: name.trim() }));
     setMenu(false);
   };
@@ -222,18 +234,24 @@ export default function Home() {
               {menu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
-                  <div className="fade-in absolute left-0 top-9 z-50 w-72 overflow-hidden rounded-md border border-line bg-sheet py-1 text-[13px] shadow-[0_12px_36px_rgba(0,0,0,0.12)]">
-                    {desks.map((d) => (
-                      <button key={d.id} onClick={() => { setActiveId(d.id); setMenu(false); }} className={`flex w-full items-center justify-between px-3.5 py-2 text-left hover:bg-mist ${d.id === desk.id ? "font-medium" : "text-soft"}`}>
-                        <span className="truncate">{d.name}</span>
-                        <span className="ml-3 shrink-0 text-[11px] text-faint">{d.sources.length} sources</span>
-                      </button>
-                    ))}
-                    <div className="my-1 border-t border-line" />
-                    <button onClick={newDesk} className="block w-full px-3.5 py-2 text-left hover:bg-mist">New issue</button>
-                    <button onClick={rename} className="block w-full px-3.5 py-2 text-left text-soft hover:bg-mist">Rename</button>
-                    {!desks.some((d) => d.id === "sample") && <button onClick={restoreSample} className="block w-full px-3.5 py-2 text-left text-soft hover:bg-mist">Restore sample issue</button>}
-                    <button onClick={removeDesk} className="block w-full px-3.5 py-2 text-left text-[#b3261e] hover:bg-mist">Delete</button>
+                  <div className="fade-in absolute left-0 top-10 z-50 w-[300px] rounded-lg border border-line bg-sheet p-1.5 text-[13px] shadow-[0_16px_40px_rgba(0,0,0,0.14)]">
+                    <MenuLabel>Your stories</MenuLabel>
+                    <div className="max-h-[45vh] overflow-y-auto">
+                      {ordered(desks).filter((d) => d.id !== "sample").map((d) => (
+                        <StoryRow key={d.id} desk={d} active={d.id === desk.id} onClick={() => pick(d.id)} />
+                      ))}
+                    </div>
+                    <div className="mx-1 my-1.5 border-t border-line" />
+                    <MenuLabel>Example</MenuLabel>
+                    {desks.some((d) => d.id === "sample") ? (
+                      <StoryRow desk={desks.find((d) => d.id === "sample")!} active={desk.id === "sample"} onClick={() => pick("sample")} />
+                    ) : (
+                      <MenuAction onClick={openSample}>Restore example</MenuAction>
+                    )}
+                    <div className="mx-1 my-1.5 border-t border-line" />
+                    <MenuAction onClick={newDesk} icon={<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}>New story</MenuAction>
+                    <MenuAction onClick={rename}>Rename</MenuAction>
+                    <MenuAction onClick={removeDesk} danger>Delete</MenuAction>
                   </div>
                 </>
               )}
@@ -252,14 +270,18 @@ export default function Home() {
         </div>
       </header>
 
-      {welcome && desk.id === "sample" && (
+      {welcome && (
         <div className="border-b border-line bg-mist/70">
           <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-6 px-6 py-3 text-[13px]">
-            <p className="text-soft">
-              Sample issue with four real sources, a finished brief, and before/after edits. Open <span className="font-medium text-ink">Write → Compare</span> to see the changes.
-            </p>
+            {desk.id === "sample" ? (
+              <p className="text-soft">
+                A finished example with real sources, a research brief, and before/after edits. Open <span className="font-medium text-ink">Write → Compare</span> to see the changes.
+              </p>
+            ) : (
+              <p className="text-soft">New here? Paste a few links below to start, or open the example to see a finished brief and edited draft.</p>
+            )}
             <div className="flex shrink-0 items-center gap-2">
-              <Button variant="plain" onClick={newDesk}>Start your own</Button>
+              {desk.id !== "sample" && <Button variant="plain" onClick={openSample}>Open example</Button>}
               <button onClick={() => { setWelcome(false); localStorage.setItem("subtext.welcomed", "1"); }} className="rounded-md px-2.5 py-1.5 text-faint hover:bg-sheet hover:text-ink">Dismiss</button>
             </div>
           </div>
@@ -299,6 +321,32 @@ export default function Home() {
   );
 }
 
+function MenuLabel({ children }: { children: React.ReactNode }) {
+  return <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium text-faint">{children}</p>;
+}
+
+function StoryRow({ desk, active, onClick }: { desk: Desk; active: boolean; onClick: () => void }) {
+  const n = desk.sources.length;
+  return (
+    <button onClick={onClick} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-mist ${active ? "bg-mist font-medium text-ink" : "text-soft"}`}>
+      <span className="flex w-3 shrink-0 justify-center">
+        {active && <svg width="11" height="11" viewBox="0 0 12 12" aria-hidden><path d="M2 6.5 4.8 9 10 3" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{desk.name}</span>
+      <span className="shrink-0 text-[11px] font-normal tabular-nums text-faint">{n ? `${n} ${n === 1 ? "source" : "sources"}` : "Empty"}</span>
+    </button>
+  );
+}
+
+function MenuAction({ onClick, children, icon, danger }: { onClick: () => void; children: React.ReactNode; icon?: React.ReactNode; danger?: boolean }) {
+  return (
+    <button onClick={onClick} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-mist ${danger ? "text-[#b3261e]" : icon ? "font-medium text-ink" : "text-soft"}`}>
+      <span className="flex w-3 shrink-0 justify-center">{icon}</span>
+      {children}
+    </button>
+  );
+}
+
 function SyncBadge({ state, error }: { state: SyncState; error: string }) {
   const look = {
     local: ["bg-faint", "Saved in this browser", "Local"],
@@ -332,7 +380,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
   const join = () => {
     const next = other.trim();
     if (!/^[0-9a-f-]{36}$/i.test(next)) return alert("That doesn't look like a workspace ID.");
-    if (!confirm("Switch to that workspace? Issues in this browser will be replaced by the ones saved there.")) return;
+    if (!confirm("Switch to that workspace? Stories in this browser will be replaced by the ones saved there.")) return;
     switchWorkspace(next);
     location.reload();
   };
@@ -347,7 +395,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
 
   return (
     <div className="space-y-6 text-[14px] leading-relaxed">
-      <p className="text-soft">Save articles and posts while you read, the way you would with Pocket. Clipped pages land in whichever issue is open, with the text exactly as your browser sees it, so paywalled and logged-in pages work too.</p>
+      <p className="text-soft">Save articles and posts while you read, the way you would with Pocket. Clipped pages land in whichever story is open, with the text exactly as your browser sees it, so paywalled and logged-in pages work too.</p>
 
       <div>
         <h3 className="mb-2 font-medium">Bookmarklet</h3>
@@ -370,7 +418,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
         <h3 className="mb-2 font-medium">Workspace</h3>
         {cloud ? (
           <>
-            <p className="mb-3 text-soft">Issues and clips are saved to Supabase under this ID. Paste it on another device to open the same desk. Anyone with the ID can see it, so treat it like a private link.</p>
+            <p className="mb-3 text-soft">Stories and clips are saved to Supabase under this ID. Paste it on another device to open the same desk. Anyone with the ID can see it, so treat it like a private link.</p>
             <code className="block select-all rounded-md border border-line bg-mist px-3 py-2 text-[12.5px]">{id}</code>
             <div className="mt-3 flex gap-2">
               <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Paste a workspace ID" className="min-w-0 flex-1 rounded-md border border-line bg-sheet px-3 py-2 text-[13px] placeholder:text-faint" />
@@ -378,7 +426,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
             </div>
           </>
         ) : (
-          <p className="text-soft">Issues are saved in this browser only. Add Supabase keys to the server to sync across devices.</p>
+          <p className="text-soft">Stories are saved in this browser only. Add Supabase keys to the server to sync across devices.</p>
         )}
       </div>
     </div>

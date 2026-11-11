@@ -44,7 +44,7 @@ $("save").addEventListener("click", async () => {
     chrome.tabs.onUpdated.removeListener(done);
     setTimeout(() => {
       chrome.tabs.remove(tab.id);
-      $("status").textContent = "Saved. It will appear in your open issue.";
+      $("status").textContent = "Saved. It will appear in your open story.";
       setTimeout(() => window.close(), 1000);
     }, 700);
   };

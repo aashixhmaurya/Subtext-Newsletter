@@ -87,7 +87,7 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
         ? `${blocked === 1 ? "One link was" : `${blocked} links were`} skipped. Adult, gambling, and piracy sites aren't supported.`
         : fresh.length
           ? ""
-          : "Those links are already in this issue.",
+          : "Those links are already in this story.",
     );
     update((d) => ({ ...d, sources: [...d.sources, ...fresh] }));
     fresh.forEach((s) => read(s, { url: s.url }));

@@ -250,7 +250,7 @@ Sources
 
 export const sampleDesk: Desk = {
   id: "sample",
-  name: "Issue 47 · Inference prices",
+  name: "Testing and Example",
   sources,
   brief,
   briefSources: sources.map((s) => s.id),
