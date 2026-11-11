@@ -18,7 +18,7 @@ type View = "research" | "split" | "write";
 
 const blankDesk = (n: number): Desk => ({
   id: Math.random().toString(36).slice(2, 10),
-  name: `Untitled story ${n}`,
+  name: `Untitled space ${n}`,
   sources: [],
   original: "",
   draft: "",
@@ -28,7 +28,7 @@ const blankDesk = (n: number): Desk => ({
 });
 
 const tidy = (list: Desk[]) =>
-  list.map((d) => ({ ...d, name: d.name === "Issue 47 · Inference prices" ? sampleDesk.name : d.name.replace(/^Untitled issue (\d+)$/, "Untitled story $1") }));
+  list.map((d) => ({ ...d, name: d.name === "Issue 47 · Inference prices" ? sampleDesk.name : d.name.replace(/^Untitled (issue|story) (\d+)$/, "Untitled space $2") }));
 
 const ordered = (list: Desk[]) => [...list].sort((a, b) => Number(a.id === "sample") - Number(b.id === "sample") || (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
 
@@ -214,7 +214,7 @@ export default function Home() {
   };
 
   const rename = () => {
-    const name = prompt("Name this story", desk.name);
+    const name = prompt("Name this space", desk.name);
     if (name?.trim()) set((d) => ({ ...d, name: name.trim() }));
     setMenu(false);
   };
@@ -235,21 +235,21 @@ export default function Home() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
                   <div className="fade-in absolute left-0 top-10 z-50 w-[300px] rounded-lg border border-line bg-sheet p-1.5 text-[13px] shadow-[0_16px_40px_rgba(0,0,0,0.14)]">
-                    <MenuLabel>Your stories</MenuLabel>
+                    <MenuLabel>Your spaces</MenuLabel>
                     <div className="max-h-[45vh] overflow-y-auto">
                       {ordered(desks).filter((d) => d.id !== "sample").map((d) => (
-                        <StoryRow key={d.id} desk={d} active={d.id === desk.id} onClick={() => pick(d.id)} />
+                        <SpaceRow key={d.id} desk={d} active={d.id === desk.id} onClick={() => pick(d.id)} />
                       ))}
                     </div>
                     <div className="mx-1 my-1.5 border-t border-line" />
                     <MenuLabel>Example</MenuLabel>
                     {desks.some((d) => d.id === "sample") ? (
-                      <StoryRow desk={desks.find((d) => d.id === "sample")!} active={desk.id === "sample"} onClick={() => pick("sample")} />
+                      <SpaceRow desk={desks.find((d) => d.id === "sample")!} active={desk.id === "sample"} onClick={() => pick("sample")} />
                     ) : (
                       <MenuAction onClick={openSample}>Restore example</MenuAction>
                     )}
                     <div className="mx-1 my-1.5 border-t border-line" />
-                    <MenuAction onClick={newDesk} icon={<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}>New story</MenuAction>
+                    <MenuAction onClick={newDesk} icon={<svg width="11" height="11" viewBox="0 0 12 12" aria-hidden><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>}>New space</MenuAction>
                     <MenuAction onClick={rename}>Rename</MenuAction>
                     <MenuAction onClick={removeDesk} danger>Delete</MenuAction>
                   </div>
@@ -326,7 +326,7 @@ function MenuLabel({ children }: { children: React.ReactNode }) {
   return <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-medium text-faint">{children}</p>;
 }
 
-function StoryRow({ desk, active, onClick }: { desk: Desk; active: boolean; onClick: () => void }) {
+function SpaceRow({ desk, active, onClick }: { desk: Desk; active: boolean; onClick: () => void }) {
   const n = desk.sources.length;
   return (
     <button onClick={onClick} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-mist ${active ? "bg-mist font-medium text-ink" : "text-soft"}`}>
@@ -381,7 +381,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
   const join = () => {
     const next = other.trim();
     if (!/^[0-9a-f-]{36}$/i.test(next)) return alert("That doesn't look like a workspace ID.");
-    if (!confirm("Switch to that workspace? Stories in this browser will be replaced by the ones saved there.")) return;
+    if (!confirm("Switch to that workspace? Spaces in this browser will be replaced by the ones saved there.")) return;
     switchWorkspace(next);
     location.reload();
   };
@@ -396,7 +396,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
 
   return (
     <div className="space-y-6 text-[14px] leading-relaxed">
-      <p className="text-soft">Save articles and posts while you read, the way you would with Pocket. Clipped pages land in whichever story is open, with the text exactly as your browser sees it, so paywalled and logged-in pages work too.</p>
+      <p className="text-soft">Save articles and posts while you read, the way you would with Pocket. Clipped pages land in whichever space is open, with the text exactly as your browser sees it, so paywalled and logged-in pages work too.</p>
 
       <div>
         <h3 className="mb-2 font-medium">Bookmarklet</h3>
@@ -419,7 +419,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
         <h3 className="mb-2 font-medium">Workspace</h3>
         {cloud ? (
           <>
-            <p className="mb-3 text-soft">Stories and clips are saved to Supabase under this ID. Paste it on another device to open the same desk. Anyone with the ID can see it, so treat it like a private link.</p>
+            <p className="mb-3 text-soft">Spaces and clips are saved to Supabase under this ID. Paste it on another device to open the same desk. Anyone with the ID can see it, so treat it like a private link.</p>
             <code className="block select-all rounded-md border border-line bg-mist px-3 py-2 text-[12.5px]">{id}</code>
             <div className="mt-3 flex gap-2">
               <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Paste a workspace ID" className="min-w-0 flex-1 rounded-md border border-line bg-sheet px-3 py-2 text-[13px] placeholder:text-faint" />
@@ -427,7 +427,7 @@ function Clipper({ cloud }: { cloud: boolean }) {
             </div>
           </>
         ) : (
-          <p className="text-soft">Stories are saved in this browser only. Add Supabase keys to the server to sync across devices.</p>
+          <p className="text-soft">Spaces are saved in this browser only. Add Supabase keys to the server to sync across devices.</p>
         )}
       </div>
     </div>

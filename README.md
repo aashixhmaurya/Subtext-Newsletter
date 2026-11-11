@@ -32,7 +32,7 @@ Keep secrets in `.env.local`. Do not commit them.
 
 ### Optional Supabase sync
 
-Without Supabase, everything stays in the browser. To sync stories and clips:
+Without Supabase, everything stays in the browser. To sync spaces and clips:
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL editor
@@ -49,12 +49,12 @@ Host as a normal Next.js app (Vercel works). Set the same env vars on the host.
 
 ## Walkthrough
 
-1. The site opens on a blank story. Use the story menu at the top left, or **Open example**, to load **Testing and Example** — four real sources, a finished brief, a rough draft, and editor notes. Your own stories sit at the top of that menu, newest first, and the example stays at the bottom.
+1. The site opens on a blank space. Use the space menu at the top left, or **Open example**, to load **Testing and Example** — four real sources, a finished brief, a rough draft, and editor notes. Your own spaces sit at the top of that menu, newest first, and the example stays at the bottom. **Light / Dark** in the header switches the theme.
 2. **Research** — what happened, why it matters (founders / builders / operators), verified facts with quotes, speculation tagged separately, story angles.
 3. **Write** — rule checks run live; editor notes are loaded. Accept or dismiss each card. **Compare → Load the published version** for before/after.
 4. **Product note** — product, engineering, and editorial judgment.
 5. **Clipper** — bookmarklet and Chrome extension.
-6. Back in your own story: paste 3+ URLs, build a brief, draft, run the editor pass.
+6. Back in your own space: paste 3+ URLs, build a brief, draft, run the editor pass.
 
 ---
 
@@ -132,7 +132,7 @@ app/api/review            editorial pass
 app/api/desks, clips      optional Supabase storage
 components/               panels and shared UI
 lib/writing.ts            metrics, rules, word diff
-lib/sample.ts             example story
+lib/sample.ts             example space
 lib/store.ts, sync.ts     Supabase + browser sync
 lib/safety.ts             blocked site categories
 supabase/schema.sql       desks and clips tables
@@ -149,7 +149,7 @@ AI is used for the brief and the editor pass. Extraction cleanup, citation match
 2. Drag the bookmarklet to the bookmarks bar, or
 3. Chrome → `chrome://extensions` → Developer mode → Load unpacked → select `extension/` → set the Subtext URL
 
-Clips go to Supabase when configured, otherwise into a local inbox for the open story.
+Clips go to Supabase when configured, otherwise into a local inbox for the open space.
 
 ---
 
@@ -170,7 +170,7 @@ Subtext reads pages on the server, so every link is checked before anything is f
 - Cursor / AI coding assistant for scaffolding and iteration
 - Gemini (`gemini-2.5-flash`) for brief and editor pass
 - Next.js, React, Tailwind, cheerio
-- Supabase for optional story and clip storage
+- Supabase for optional space and clip storage
 
 I designed the workflow, citation grounding, hybrid rules + LLM editor, and the sample editorial, and checked extract → brief → review → accept/dismiss → compare end to end.
 
@@ -179,7 +179,7 @@ I designed the workflow, citation grounding, hybrid rules + LLM editor, and the 
 ## Limits
 
 - No accounts. A workspace ID works like a private link — anyone with it can open that workspace.
-- Sync is last-write-wins per story.
+- Sync is last-write-wins per space.
 - Some sites block automated fetch; paste text or use the clipper.
 - Category blocking covers well-known sites and clearly labelled pages, not every site on the web.
 - There is no per-user rate limit on brief and review requests yet.

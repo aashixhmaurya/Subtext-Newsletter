@@ -21,7 +21,7 @@ export async function PUT(req: Request) {
   const supabase = db();
   if (!supabase) return NextResponse.json({ enabled: false });
   const raw = await req.text();
-  if (raw.length > MAX_BYTES) return NextResponse.json({ error: "This story is too large to sync." }, { status: 413 });
+  if (raw.length > MAX_BYTES) return NextResponse.json({ error: "This space is too large to sync." }, { status: 413 });
 
   let body: { workspace?: unknown; desk?: Desk };
   try {
@@ -30,7 +30,7 @@ export async function PUT(req: Request) {
     return NextResponse.json({ error: "Malformed request." }, { status: 400 });
   }
   const { workspace, desk } = body;
-  if (!validWorkspace(workspace) || !desk?.id || typeof desk.id !== "string") return NextResponse.json({ error: "Invalid workspace or story." }, { status: 400 });
+  if (!validWorkspace(workspace) || !desk?.id || typeof desk.id !== "string") return NextResponse.json({ error: "Invalid workspace or space." }, { status: 400 });
 
   const { error } = await supabase
     .from("desks")
@@ -45,7 +45,7 @@ export async function DELETE(req: Request) {
   const params = new URL(req.url).searchParams;
   const workspace = params.get("workspace");
   const id = params.get("id");
-  if (!validWorkspace(workspace) || !id) return NextResponse.json({ error: "Invalid workspace or story." }, { status: 400 });
+  if (!validWorkspace(workspace) || !id) return NextResponse.json({ error: "Invalid workspace or space." }, { status: 400 });
 
   const { error } = await supabase.from("desks").delete().eq("workspace_id", workspace).eq("id", id);
   if (error) return NextResponse.json({ error: storageError(error) }, { status: 502 });
