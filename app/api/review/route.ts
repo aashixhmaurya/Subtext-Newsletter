@@ -4,7 +4,10 @@ import { hashId } from "@/lib/writing";
 import type { IssueKind, Suggestion } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
+
+const MAX_DRAFT = 30000;
+const EVIDENCE_BUDGET = 40000;
 
 const KINDS: IssueKind[] = ["clarity", "jargon", "repetition", "accuracy", "passive", "filler", "long"];
 
@@ -48,10 +51,14 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const draft = typeof body?.draft === "string" ? body.draft : "";
   if (draft.trim().split(/\s+/).length < 30) return NextResponse.json({ error: "The draft is too short to review. Write at least a paragraph." }, { status: 400 });
+  if (draft.length > MAX_DRAFT) return NextResponse.json({ error: "The draft is too long for one pass. Review it a section at a time." }, { status: 400 });
 
-  const sources: { n: number; title: string; text: string }[] = Array.isArray(body?.sources) ? body.sources : [];
+  const sources: { n: number; title: string; text: string }[] = Array.isArray(body?.sources)
+    ? body.sources.filter((s: { text?: unknown }) => typeof s?.text === "string" && s.text.trim())
+    : [];
+  const share = Math.min(5000, Math.floor(EVIDENCE_BUDGET / Math.max(sources.length, 1)));
   const evidence = sources.length
-    ? `\n\nSOURCES the draft is based on (use these to check accuracy):\n\n${sources.map((s) => `[${s.n}] ${s.title}\n${String(s.text).slice(0, 5000)}`).join("\n\n---\n\n")}`
+    ? `\n\nSOURCES the draft is based on (use these to check accuracy):\n\n${sources.map((s) => `[${s.n}] ${s.title}\n${s.text.slice(0, share)}`).join("\n\n---\n\n")}`
     : "\n\n(No sources were provided, so skip accuracy checks.)";
 
   try {

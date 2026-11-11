@@ -3,7 +3,7 @@ import { askJSON, EditorialError, normalise } from "@/lib/gemini";
 import type { Brief, Citation } from "@/lib/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 interface InSource {
   title: string;
@@ -13,6 +13,7 @@ interface InSource {
 }
 
 const PER_SOURCE = 14000;
+const TOTAL_BUDGET = 100000;
 
 const citations = {
   type: "array",
@@ -65,18 +66,24 @@ Rules:
 - Your own inferences go in "speculation" with kind "analysis" (reasoned from the evidence) or "speculation" (forward-looking or uncertain).
 - Every citation quote must be copied character for character from the cited source. Keep it short. Do not paraphrase inside a quote.
 - Write plainly. No hype words (revolutionary, game-changing, unlock). Explain technical terms in a few words the first time.
-- whatHappened: 2-4 sentences across all sources. perSource: one sentence per source.
+- whatHappened: 2-4 sentences across all sources.
+- perSource: exactly one entry for every source, in order, one sentence each. If a source is off-topic, a homepage, or too thin to use, say that plainly instead of skipping it.
 - audiences: one or two concrete sentences each on what this changes for that reader.
 - angles: 2-3 newsletter angles. Prefer tension, a non-obvious connection between sources, or a practical decision the reader faces. A good headline is specific, not clickbait.
 - openQuestions: what the editor should verify or chase before publishing.`;
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
-  const sources: InSource[] = Array.isArray(body?.sources) ? body.sources.filter((s: InSource) => s?.text?.trim()) : [];
+  const sources: InSource[] = Array.isArray(body?.sources)
+    ? body.sources
+        .filter((s: Partial<InSource>) => typeof s?.text === "string" && s.text.trim())
+        .map((s: Partial<InSource>) => ({ ...s, title: String(s.title || "Untitled"), site: String(s.site || ""), url: String(s.url || "") }))
+    : [];
   if (!sources.length) return NextResponse.json({ error: "None of the sources have readable text yet." }, { status: 400 });
 
+  const share = Math.min(PER_SOURCE, Math.floor(TOTAL_BUDGET / sources.length));
   const prompt = sources
-    .map((s, i) => `[S${i + 1}] ${s.title}\nPublisher: ${s.site}\nURL: ${s.url || "pasted by editor"}\n\n${s.text.slice(0, PER_SOURCE)}`)
+    .map((s, i) => `[S${i + 1}] ${s.title}\nPublisher: ${s.site}\nURL: ${s.url || "pasted by editor"}\n\n${s.text.slice(0, share)}`)
     .join("\n\n---\n\n");
 
   try {
@@ -105,7 +112,10 @@ function ground(raw: Omit<Brief, "generatedAt">, sources: InSource[]): Brief {
 
   return {
     whatHappened: raw.whatHappened ?? "",
-    perSource: (raw.perSource ?? []).filter((p) => p.source >= 1 && p.source <= sources.length),
+    perSource: sources.map((_, i) => {
+      const said = (raw.perSource ?? []).find((p) => p.source === i + 1 && p.takeaway?.trim());
+      return said ?? { source: i + 1, takeaway: "Not used in this brief. It may be off-topic or too thin to support a claim." };
+    }),
     whyItMatters: raw.whyItMatters ?? "",
     audiences: raw.audiences ?? { founders: "", builders: "", operators: "" },
     facts: grounded,
