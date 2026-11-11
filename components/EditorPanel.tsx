@@ -164,7 +164,7 @@ export default function EditorPanel({ desk, update, sources, narrow }: { desk: D
           </Button>
         </div>
       </div>
-      {error && <p className="-mt-2 text-[13px] text-[#b3261e]">{error}</p>}
+      {error && <p className="-mt-2 text-[13px] text-danger">{error}</p>}
 
       {view === "write" && <MetricsBar now={stats} />}
 
@@ -306,7 +306,7 @@ function MetricsBar({ now, before }: { now: Metrics; before?: Metrics }) {
             <div className="mt-0.5 text-[17px] tabular-nums tracking-[-0.01em]">
               {prev && prev[label] !== cur[label] && <span className="mr-1.5 text-[13px] text-faint line-through">{prev[label]}</span>}
               {value}
-              {hint && <span className={`ml-1.5 text-[11px] ${hint === "on target" ? "text-faint" : "text-[#a86b00]"}`}>{hint}</span>}
+              {hint && <span className={`ml-1.5 text-[11px] ${hint === "on target" ? "text-faint" : "text-warn"}`}>{hint}</span>}
             </div>
           </div>
         ))}

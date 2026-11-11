@@ -188,7 +188,7 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
             {loading ? "Still reading some sources…" : usable.length < 3 ? "Three or more sources make a better brief." : `${usable.length} sources ready.`}
           </span>
         </div>
-        {error && <p className="mt-3 text-[13px] text-[#b3261e]">{error}</p>}
+        {error && <p className="mt-3 text-[13px] text-danger">{error}</p>}
       </section>
 
       {desk.brief && <BriefView brief={desk.brief} sources={cited} onUseAngle={onUseAngle} compact={compact} />}
@@ -216,7 +216,7 @@ function SourceRow({ source: s, n, fallbackN, onRemove, onRetry, onPaste }: { so
             <span>{s.site || "—"}</span>
             {s.kind !== "article" && <span>· {s.kind === "tweet" ? "Post" : "Note"}</span>}
             <span>·</span>
-            <span className={s.status === "failed" ? "text-[#b3261e]" : s.status === "thin" ? "text-[#a86b00]" : ""}>
+            <span className={s.status === "failed" ? "text-danger" : s.status === "thin" ? "text-warn" : ""}>
               {s.status === "loading" && <Spinner />} {label}
             </span>
           </div>
@@ -349,10 +349,10 @@ function Claim({ text, citations, sources, tag }: { text: string; citations: Cit
   return (
     <li className="text-[15px] leading-relaxed">
       <p>
-        {tag && <span className={`mr-2 inline-block rounded px-1.5 py-0.5 align-[1px] text-[10px] font-semibold uppercase tracking-[0.06em] ${tag === "unsupported" ? "bg-[#fbe9e7] text-[#b3261e]" : "bg-mist text-soft"}`}>{tag}</span>}
+        {tag && <span className={`mr-2 inline-block rounded px-1.5 py-0.5 align-[1px] text-[10px] font-semibold uppercase tracking-[0.06em] ${tag === "unsupported" ? "bg-danger-soft text-danger" : "bg-mist text-soft"}`}>{tag}</span>}
         {text}
         {citations.map((c, i) => (
-          <button key={i} onClick={() => setOpen(!open)} title={c.verified ? "Show the supporting quote" : "Quote not found verbatim in the source"} className={`ml-1.5 text-[12px] tabular-nums ${c.verified ? "text-link" : "text-[#a86b00]"} hover:underline`}>
+          <button key={i} onClick={() => setOpen(!open)} title={c.verified ? "Show the supporting quote" : "Quote not found verbatim in the source"} className={`ml-1.5 text-[12px] tabular-nums ${c.verified ? "text-link" : "text-warn"} hover:underline`}>
             [S{c.source}]
           </button>
         ))}

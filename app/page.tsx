@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import EditorPanel from "@/components/EditorPanel";
 import ProductNote from "@/components/ProductNote";
 import ResearchPanel, { extractSource, newSource } from "@/components/ResearchPanel";
-import { Button, Logo, Segmented, Sheet } from "@/components/ui";
+import { Button, Logo, Segmented, Sheet, ThemeToggle } from "@/components/ui";
 import { blockedUrl } from "@/lib/safety";
 import { sampleDesk } from "@/lib/sample";
 import { dropDesk, mergeDesks, pullClips, pullDesks, pushDesk, switchWorkspace, workspaceId, type SyncState } from "@/lib/sync";
@@ -264,6 +264,7 @@ export default function Home() {
 
           <nav className="flex shrink-0 items-center gap-1 whitespace-nowrap text-[13px]">
             <SyncBadge state={sync} error={syncError} />
+            <span className="mr-1"><ThemeToggle /></span>
             <button onClick={() => setSheet("clipper")} className="rounded-md px-2.5 py-1.5 font-medium text-soft hover:bg-mist hover:text-ink">Clipper</button>
             <button onClick={() => setSheet("note")} className="rounded-md px-2.5 py-1.5 font-medium text-soft hover:bg-mist hover:text-ink">Product note</button>
           </nav>
@@ -340,7 +341,7 @@ function StoryRow({ desk, active, onClick }: { desk: Desk; active: boolean; onCl
 
 function MenuAction({ onClick, children, icon, danger }: { onClick: () => void; children: React.ReactNode; icon?: React.ReactNode; danger?: boolean }) {
   return (
-    <button onClick={onClick} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-mist ${danger ? "text-[#b3261e]" : icon ? "font-medium text-ink" : "text-soft"}`}>
+    <button onClick={onClick} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-mist ${danger ? "text-danger" : icon ? "font-medium text-ink" : "text-soft"}`}>
       <span className="flex w-3 shrink-0 justify-center">{icon}</span>
       {children}
     </button>

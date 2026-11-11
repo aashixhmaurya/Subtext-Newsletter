@@ -1,6 +1,33 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+
+type Theme = "light" | "dark";
+
+const storedTheme = (): Theme => {
+  try {
+    const t = localStorage.getItem("subtext.theme");
+    if (t === "light" || t === "dark") return t;
+  } catch {}
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+};
+
+export function ThemeToggle() {
+  const [theme, setTheme] = useState<Theme>(() => (typeof window === "undefined" ? "light" : storedTheme()));
+
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  const choose = (t: Theme) => {
+    setTheme(t);
+    try {
+      localStorage.setItem("subtext.theme", t);
+    } catch {}
+  };
+
+  return <Segmented size="sm" value={theme} onChange={choose} options={[{ value: "light", label: "Light" }, { value: "dark", label: "Dark" }]} />;
+}
 
 export function Logo() {
   return (
@@ -21,7 +48,7 @@ export function Segmented<T extends string>({ value, options, onChange, size = "
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`rounded-[5px] font-medium transition-colors ${size === "sm" ? "px-2.5 py-1" : "px-3.5 py-1.5"} ${value === o.value ? "bg-ink text-white" : "text-soft hover:bg-mist hover:text-ink"}`}
+          className={`rounded-[5px] font-medium transition-colors ${size === "sm" ? "px-2.5 py-1" : "px-3.5 py-1.5"} ${value === o.value ? "bg-ink text-paper" : "text-soft hover:bg-mist hover:text-ink"}`}
         >
           {o.label}
         </button>
@@ -40,7 +67,7 @@ export function Sheet({ open, onClose, title, children, wide }: { open: boolean;
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/25 px-4 py-14 backdrop-blur-[3px]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/30 px-4 py-14 backdrop-blur-[3px]" onMouseDown={onClose}>
       <div className={`fade-in w-full ${wide ? "max-w-2xl" : "max-w-lg"} rounded-lg border border-line bg-sheet shadow-[0_16px_48px_rgba(0,0,0,0.14)]`} onMouseDown={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line px-6 py-3.5">
           <h2 className="text-[15px] font-semibold tracking-[-0.01em]">{title}</h2>
@@ -58,7 +85,7 @@ export function Spinner() {
 
 export function Button({ children, onClick, variant = "plain", disabled, title }: { children: React.ReactNode; onClick?: () => void; variant?: "primary" | "plain" | "quiet"; disabled?: boolean; title?: string }) {
   const look = {
-    primary: "bg-ink text-white hover:bg-[#2a2a2c] disabled:bg-faint disabled:text-white/80",
+    primary: "bg-ink text-paper hover:bg-ink/85 disabled:bg-faint disabled:text-paper/80",
     plain: "border border-line bg-sheet text-ink hover:border-ink/25 hover:bg-mist disabled:text-faint",
     quiet: "text-soft hover:bg-mist hover:text-ink disabled:text-faint",
   }[variant];
