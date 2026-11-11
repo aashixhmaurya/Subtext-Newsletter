@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { NextResponse } from "next/server";
+import { blockedPage, blockedSite, NOT_SUPPORTED } from "@/lib/safety";
 import type { Source } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
   }
   if (isPrivateName(url.hostname)) return NextResponse.json(failed(url.href, "Local and private addresses can't be fetched."));
   if (!url.hostname.includes(".") && !isIP(url.hostname.replace(/^\[|\]$/g, ""))) return NextResponse.json(failed(raw, "That doesn't look like a web address."));
+  if (blockedSite(url.hostname)) return NextResponse.json(failed(url.href, NOT_SUPPORTED));
 
   if (pasted) {
     return NextResponse.json({ ...fromText(pasted, body?.title), url: url.href, site: host(url), kind: isTweet(url) ? "tweet" : "article" });
@@ -102,6 +104,7 @@ async function get(start: URL, accept: string) {
 async function assertPublic(url: URL) {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Unreadable("Only web pages can be read.");
   if (isPrivateName(url.hostname)) throw new Unreadable("Local and private addresses can't be fetched.");
+  if (blockedSite(url.hostname)) throw new Unreadable(NOT_SUPPORTED);
   const name = url.hostname.replace(/^\[|\]$/g, "");
   const addresses = isIP(name)
     ? [name]
@@ -146,6 +149,7 @@ async function article(start: URL): Promise<Extracted> {
     throw new Unreadable("This page is behind a login or a bot check. Open it in your browser and use the clipper, or paste the text.");
   }
   const site = meta("og:site_name") || host(url);
+  if (blockedPage(html.slice(0, 60000), pageTitle, title, site)) throw new Unreadable(NOT_SUPPORTED);
   const description = meta("og:description") || meta("description") || "";
 
   $("script, style, noscript, svg, iframe, form, nav, header, footer, aside, button, figure figcaption, [role=navigation], [role=banner], [role=contentinfo], [aria-hidden=true]").remove();

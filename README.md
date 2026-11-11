@@ -166,5 +166,6 @@ I designed the workflow, citation grounding, hybrid rules + LLM editor, and the 
 - No accounts. A workspace ID works like a private link — anyone with it can open that workspace.
 - Sync is last-write-wins per issue.
 - Some sites block automated fetch; paste text or use the clipper.
+- Adult, gambling, and piracy sites are refused using a domain list and the page's own adult labels. It catches the common cases, not every site.
 - Gemini can rate-limit or overload; the UI retries and shows a clear message.
 - Not production-hardened, by design for the assignment.

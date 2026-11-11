@@ -5,6 +5,7 @@ import EditorPanel from "@/components/EditorPanel";
 import ProductNote from "@/components/ProductNote";
 import ResearchPanel, { extractSource, newSource } from "@/components/ResearchPanel";
 import { Button, Logo, Segmented, Sheet } from "@/components/ui";
+import { blockedUrl } from "@/lib/safety";
 import { sampleDesk } from "@/lib/sample";
 import { dropDesk, mergeDesks, pullClips, pullDesks, pushDesk, switchWorkspace, workspaceId, type SyncState } from "@/lib/sync";
 import type { Angle, Desk, Source } from "@/lib/types";
@@ -115,6 +116,7 @@ export default function Home() {
         items = [...items, ...clips];
       } catch {}
     }
+    items = items.filter((it) => !blockedUrl(it.url));
     if (!items.length) return;
     const target = activeRef.current;
     const fresh = items.map((it) => {

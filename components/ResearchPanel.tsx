@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { blockedUrl } from "@/lib/safety";
 import type { Angle, Brief, Citation, Desk, Source } from "@/lib/types";
 import { Button, Spinner } from "./ui";
 
@@ -67,7 +68,12 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
       .map((l) => (/^https?:\/\//i.test(l) ? l : `https://${l}`));
     const seen = new Set(desk.sources.filter((s) => s.url).map((s) => linkKey(s.url)));
     const fresh: Source[] = [];
+    let blocked = 0;
     for (const url of candidates) {
+      if (blockedUrl(url)) {
+        blocked++;
+        continue;
+      }
       if (seen.has(linkKey(url))) continue;
       seen.add(linkKey(url));
       fresh.push(newSource({ url, title: url.replace(/^https?:\/\/(www\.)?/i, "") }));
@@ -76,7 +82,13 @@ export default function ResearchPanel({ desk, update, onUseAngle, compact }: { d
       setError("Those don't look like links. Paste full web addresses, one per line, or use Paste text instead.");
       return;
     }
-    setError(fresh.length ? "" : "Those links are already in this issue.");
+    setError(
+      blocked
+        ? `${blocked === 1 ? "One link was" : `${blocked} links were`} skipped. Adult, gambling, and piracy sites aren't supported.`
+        : fresh.length
+          ? ""
+          : "Those links are already in this issue.",
+    );
     update((d) => ({ ...d, sources: [...d.sources, ...fresh] }));
     fresh.forEach((s) => read(s, { url: s.url }));
     setLinks("");

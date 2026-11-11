@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/ui";
+import { blockedUrl, NOT_SUPPORTED } from "@/lib/safety";
 import { pushClip, workspaceId } from "@/lib/sync";
 
 type Clip = { url: string; title: string; text: string };
@@ -33,15 +34,24 @@ export default function Capture() {
       return;
     }
     history.replaceState(null, "", "/capture");
+    if (blockedUrl(item.url)) {
+      setProblem(NOT_SUPPORTED);
+      return;
+    }
 
+    const saved = () => {
+      setClip(item);
+      if (window.opener) setTimeout(() => window.close(), 1800);
+    };
     pushClip(workspaceId(), item)
       .then((res) => {
         if (!res.enabled || !res.ok) saveLocally(item);
+        saved();
       })
-      .catch(() => saveLocally(item))
-      .finally(() => {
-        setClip(item);
-        if (window.opener) setTimeout(() => window.close(), 1800);
+      .catch((e: Error) => {
+        if (e.message === NOT_SUPPORTED) return setProblem(NOT_SUPPORTED);
+        saveLocally(item);
+        saved();
       });
   }, []);
 

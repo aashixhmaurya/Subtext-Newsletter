@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { blockedUrl, NOT_SUPPORTED } from "@/lib/safety";
 import { db, storageError, validWorkspace } from "@/lib/store";
 
 export const runtime = "nodejs";
@@ -10,6 +11,7 @@ export async function POST(req: Request) {
   if (!validWorkspace(body?.workspace) || typeof body?.url !== "string" || !/^https?:\/\//i.test(body.url)) {
     return NextResponse.json({ error: "Invalid clip." }, { status: 400 });
   }
+  if (blockedUrl(body.url)) return NextResponse.json({ enabled: true, blocked: true, error: NOT_SUPPORTED }, { status: 422 });
 
   const { error } = await supabase.from("clips").insert({
     workspace_id: body.workspace,
