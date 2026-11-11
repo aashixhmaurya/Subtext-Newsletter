@@ -4,6 +4,8 @@ An editorial desk for AI newsletters. Clip what you are reading, get a research 
 
 Built for the This Week in AI Forward Deployed Engineer Intern assignment.
 
+**Live:** [subtext-newsletter.vercel.app](https://subtext-newsletter.vercel.app)
+
 ---
 
 ## Quick start
@@ -64,7 +66,7 @@ Host as a normal Next.js app (Vercel works). Set the same env vars on the host.
 
 **Flow:** clip or paste links → research brief → pick an angle → draft beside the brief → editor pass → accept / dismiss → compare with the original.
 
-**Priorities:** citation checks against source text, writer stays in control, graceful failure on blocked pages, Pocket-style clipper.
+**Priorities:** citation checks against source text, writer stays in control, graceful failure on blocked pages, safe link handling, Pocket-style clipper.
 
 **Left out:** accounts, collaboration, publishing, PDFs, scheduled feeds.
 
@@ -75,7 +77,7 @@ More detail lives in-app under **Product note**.
 ## Assignment mapping
 
 ### Part A — Research
-Paste URLs, tweets, or notes, or use the bookmarklet / Chrome extension. Brief covers what happened, per-source takeaways, why it matters, audiences, facts with source links and quotes, speculation tags, angles, and open questions. The server checks each fact quote against the extracted source text and demotes unmatched claims.
+Paste URLs, tweets, or notes, or use the bookmarklet / Chrome extension. Brief covers what happened, per-source takeaways, why it matters, audiences, facts with source links and quotes, speculation tags, angles, and open questions. The server checks each fact quote against the extracted source text and demotes unmatched claims. Unreadable, login-walled, and restricted links are reported with a clear reason (see [Source safety](#source-safety)).
 
 ### Part B — Writing
 Rule checks for long sentences, passive voice, filler, and dense paragraphs. LLM pass for clarity, jargon, repetition, and accuracy vs sources. Each note shows the passage, why it matters, and an optional rewrite. Accept / dismiss, original kept, Compare with a word diff. Metrics include words, reading time, average sentence length, grade level, and long-sentence count, with short explanations.
@@ -132,6 +134,7 @@ components/               panels and shared UI
 lib/writing.ts            metrics, rules, word diff
 lib/sample.ts             sample issue
 lib/store.ts, sync.ts     Supabase + browser sync
+lib/safety.ts             blocked site categories
 supabase/schema.sql       desks and clips tables
 extension/                Chrome MV3 clipper
 ```
@@ -147,6 +150,18 @@ AI is used for the brief and the editor pass. Extraction cleanup, citation match
 3. Chrome → `chrome://extensions` → Developer mode → Load unpacked → select `extension/` → set the Subtext URL
 
 Clips go to Supabase when configured, otherwise into a local inbox for the open issue.
+
+---
+
+## Source safety
+
+Subtext reads pages on the server, so every link is checked before anything is fetched.
+
+- **Public web pages only.** Links must be `http` or `https`. Local, private, and cloud-metadata addresses are refused, including disguised forms such as numeric IPs and hostnames that resolve to private ranges.
+- **Redirects are re-checked.** Every hop is validated again, with a limit of six redirects, so a public link can't bounce the server somewhere it shouldn't go.
+- **Restricted categories are refused.** Adult, gambling, and piracy sites are blocked using a maintained domain list, hostname patterns, and the content-rating labels such sites publish in their own page headers. Blocked links are never fetched or stored.
+- **Same rules everywhere.** The link box, the bookmarklet, the Chrome extension, and the clip storage API all apply the same check, and the user sees a short, neutral message explaining why a link was skipped.
+- **Bounded reads.** Each page gets a fixed time budget with one retry, and only the first 24,000 characters of text are kept. PDFs, media files, and login-walled pages are reported clearly instead of half-read.
 
 ---
 
@@ -166,6 +181,7 @@ I designed the workflow, citation grounding, hybrid rules + LLM editor, and the 
 - No accounts. A workspace ID works like a private link — anyone with it can open that workspace.
 - Sync is last-write-wins per issue.
 - Some sites block automated fetch; paste text or use the clipper.
-- Adult, gambling, and piracy sites are refused using a domain list and the page's own adult labels. It catches the common cases, not every site.
+- Category blocking covers well-known sites and clearly labelled pages, not every site on the web.
+- There is no per-user rate limit on brief and review requests yet.
 - Gemini can rate-limit or overload; the UI retries and shows a clear message.
 - Not production-hardened, by design for the assignment.
